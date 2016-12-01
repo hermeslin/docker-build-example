@@ -1,0 +1,56 @@
+
+#=============================
+# mysql command
+#=============================
+
+# pull mysql:latest image
+sudo docker pull mysql:latest
+
+# docker run the image
+sudo docker run \
+--name mysql \
+-v /var/www/docker/persistent-disk/db/mysql:/var/lib/mysql \
+-e MYSQL_ROOT_PASSWORD=hermes \
+-p 3306:3306 \
+-d mysql:latest
+
+# execute mysql shell
+sudo docker exec -it mysql mysql -u root -p
+
+#=============================
+# php command
+#=============================
+
+# change dir to /var/www/docker/build/php and build new image
+sudo docker build -t hermeslin/php:7-fpm-alpine .
+
+# docker run the image
+sudo docker run \
+--name php-7-fpm \
+-v /var/www/docker/build/php/conf:/usr/local/etc:ro \
+-v /var/www/docker/persistent-disk/project:/var/www/project \
+-v /var/www/docker/persistent-disk/tools:/var/www/tools:ro \
+-v /var/www/docker/persistent-disk/log/php-7-fpm:/var/log/php-7-fpm \
+-v /var/www/docker/persistent-disk/cache/php-7-fpm:/var/cache/opcache \
+--link mysql:mysql \
+-d hermeslin/php:7-fpm-alpine
+
+#=============================
+# nginx command
+#=============================
+
+# change dir to /var/www/docker/build/nginx and  new image
+sudo docker build -t hermeslin/nginx:stable-alpine .
+
+# docker run the image
+sudo docker run \
+--name nginx \
+-v /var/www/docker/build/nginx/conf:/etc/nginx:ro \
+-v /var/www/docker/persistent-disk/project:/var/www/project:ro \
+-v /var/www/docker/persistent-disk/tools:/var/www/tools:ro \
+-v /var/www/docker/persistent-disk/log/nginx:/var/log/nginx \
+-v /var/www/docker/persistent-disk/cache/nginx:/var/cache/nginx \
+--link php-7-fpm:php-7-fpm \
+-p 80:80 \
+-p 443:443 \
+-d hermeslin/nginx:stable-alpine
